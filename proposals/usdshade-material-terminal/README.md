@@ -33,19 +33,27 @@ Currently the the UsdShade Material prim supports a fixed set of terminal connec
 root of the respective shaders graphs. This has so far been sufficient for the current rendering use cases, but we 
 would like to broaden the scope of the supported rendering approaches.
 
-## Problem
-MaterialX does not have a node that directly corresponds to the UsdShade `Material` primitive. Instead it provides two 
-nodes that output a `material` type. A `surfacematerial` node that takes a `surfaceshader` and `displacementshader` as 
-input, and a `volumematerial` that has a `volumeshader` input. In MaterialX 1.38 the `surfacematerial` node interface 
-only contained these inputs for surface and displacement, but in MaterialX 1.39 a third, `backsurfaceshader`, was added 
+MaterialX does not have a node that directly corresponds to the UsdShade `Material` primitive. Instead it provides two
+nodes that output a `material` type. A `surfacematerial` node that takes a `surfaceshader` and `displacementshader` as
+input, and a `volumematerial` that has a `volumeshader` input. In MaterialX 1.38 the `surfacematerial` node interface
+only contained these inputs for surface and displacement, but in MaterialX 1.39 a third, `backsurfaceshader`, was added
 to the `surfacematerial` node.
 
+## Problem
 Directly supporting this new MaterialX `surfacematerial` input with the current UsdShade Material could suggest that we 
-need need to update the USD schema to add an additional named terminal, incuring the usual complexity and support cost 
-of schema changes. We are also not sure this will be the last such change. There are other ideas being discussed where 
-it may be necessary to extend the material in different ways, including but not limited to the idea of supporting 
-adding a material level ambient occlusion signal, or other properties that are not directly connected to physically 
-based rendering.
+need to update the USD schema to add an additional terminal, incurring the usual complexity and support cost 
+of schema changes, but we are also not sure that this will be the last such change. There are a number of other ideas being 
+discussed where it may be necessary to extend the material in different ways. Some real time shading models would 
+like to include ambient occlusion signal at the material level. There is an in progress proposal for MaterialX to add 
+non-visual data to material definitions. This would be very similar in mechanism to the existing <aovoutput> proposal, 
+where new elements are added to the `surfacematerial` node. If we want to add that, with the current setup that means 
+we need to add ports for all of those to the UsdShadeMaterial. 
+
+There is also strong interest for to be able to describe material layering, in both MaterialX and UsdShade.  That is 
+correct physical layering of materials (or "vertical layering" or "slabs" depending on who you ask) and that needs 
+to include the entire material definition including non-visual properties. If we were to try to describe this in the 
+current UsdShade schema, the layering would need to be defined over the UsdShade Material prim, which is not its 
+business (its business is "what material does this renderer apply to this prim, and for what render purpose").
 
 ## Goal
 To make a compatible change to the existing UsdShade schema that will allow material system authors more flexibility 
@@ -79,12 +87,13 @@ It also decouples the material purpose (`full`, `preview`) and the renderer targ
 the material terminals, meaning that less terminals will need to be duplicated if multiple purposes or render targets 
 are being authored for. We hope this is a small win for simplicity.
 With this change, the node that the `material` terminal is connected to is the root node of the entire material. This 
-root node itself is a Shader prim, meaning that it's output could conceptually be connected to other Shader nodes. This 
+root node itself is a Shader prim, thus it's output could conceptually be connected to other Shader nodes. This 
 would allow material authoring systems to explore ideas where entire composite materials, such as rusty painted metal, 
 could be authored in a more natural way.
 While the MaterialX standard library does not currently contain nodes that operate on a `material` type as an input, 
-other production proven material authoring systems exist that facilitate this workflow in a user friendly way.
-**** Reference MaterialCombine at Imageworks? - anything at NVidia? others? ****
+other production proven material authoring systems exist that facilitate this workflow in a user friendly way. Concretely,
+this is exactly how MDL in Omniverse works, having a node that defines the material with the constituent parts being
+connected as inputs. 
 
 ## Challenges
 The introduction of this change will likely infer a change in `UsdMtlx` to adopt this new terminal convention. Any 
