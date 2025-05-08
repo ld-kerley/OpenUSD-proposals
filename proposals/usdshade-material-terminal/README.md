@@ -93,7 +93,9 @@ could be authored in a more natural way.
 While the MaterialX standard library does not currently contain nodes that operate on a `material` type as an input, 
 other production proven material authoring systems exist that facilitate this workflow in a user friendly way. Concretely,
 this is exactly how MDL in Omniverse works, having a node that defines the material with the constituent parts being
-connected as inputs. 
+connected as inputs. Sony Pictures Imageworks also has a node based material "layering" system, MaterialCombine. Where 
+the atomic nodes in the graph are materials, and a number of combination operations are supported. It is a production 
+proven system, and has been used for all of projects over the past 8 years. 
 
 ## Challenges
 The introduction of this change will likely infer a change in `UsdMtlx` to adopt this new terminal convention. Any 
